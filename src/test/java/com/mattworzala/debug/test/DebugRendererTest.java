@@ -13,6 +13,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 public final class DebugRendererTest {
     private static ClientRenderer renderer;
@@ -24,7 +25,7 @@ public final class DebugRendererTest {
     }
 
     private static void handleJoinGame(ClientPlayNetworkHandler handler, PacketSender sender, MinecraftClient client) {
-
+        System.out.println("Join game");
         var pos1 = new Vec3d(0, 0, 0);
         var pos2 = new Vec3d(5, 5, 5);
         var pos3 = new Vec3d(-5, 5, 5);
@@ -54,6 +55,8 @@ public final class DebugRendererTest {
         var bezierShape = new SplineShape(SplineShape.Type.BEZIER, List.of(pos1, pos2, pos3, pos1), true,
                 0xFFFF0000, RenderLayer.INLINE, 4f);
         renderer.add(new Identifier("debug", "test_bezier"), bezierShape);
+        System.out.println("Added debug shapes");
+        Logger.getLogger("debug").info("Added debug shapes");
     }
 
 }

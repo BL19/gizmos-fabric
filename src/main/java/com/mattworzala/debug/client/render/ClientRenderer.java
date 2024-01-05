@@ -6,6 +6,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL32;
 
 import java.util.Map;
@@ -33,7 +34,7 @@ public class ClientRenderer {
         shapes.clear();
     }
 
-    public void render() {
+    public void render(Matrix4f matrix) {
         MinecraftClient.getInstance().getProfiler().push("debug_renderer");
         var oldShader = RenderSystem.getShader();
         try {
@@ -49,7 +50,7 @@ public class ClientRenderer {
             RenderSystem.polygonOffset(-1.0f, -1.0f);
 
             var cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
-            context.init(cameraPos);
+            context.init(cameraPos, matrix);
 
             // Rendering
             for (var shape : shapes.values()) {

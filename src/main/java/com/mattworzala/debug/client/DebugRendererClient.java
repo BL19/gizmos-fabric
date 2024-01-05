@@ -47,8 +47,10 @@ public class DebugRendererClient implements ClientModInitializer {
         try {
             var testMain = Class.forName("com.mattworzala.debug.test.DebugRendererTest");
             testMain.getMethod("init", ClientRenderer.class).invoke(null, renderer);
+            LOGGER.info("Initialized test main");
         } catch (ClassNotFoundException ignored) {
             // If class not found we are probably not running test source sets, so just move on.
+            LOGGER.warn("Failed to find test main");
         } catch (Exception e) {
             LOGGER.error("Failed to init test main", e);
         }
@@ -60,11 +62,11 @@ public class DebugRendererClient implements ClientModInitializer {
 
         try {
             RenderSystem.getModelViewStack().push();
-            RenderSystem.getModelViewStack().loadIdentity();
-            RenderSystem.getModelViewStack().multiplyPositionMatrix(ctx.matrixStack().peek().getPositionMatrix());
-            RenderSystem.applyModelViewMatrix();
+//            RenderSystem.getModelViewStack().loadIdentity();
+//            RenderSystem.getModelViewStack().multiplyPositionMatrix(ctx.matrixStack().peek().getPositionMatrix());
+//            RenderSystem.applyModelViewMatrix();
             ctx.worldRenderer().getTranslucentFramebuffer().beginWrite(false);
-            renderer.render();
+            renderer.render(ctx.matrixStack().peek().getPositionMatrix());
         } finally {
             MinecraftClient.getInstance().getFramebuffer().beginWrite(false);
             RenderSystem.getModelViewStack().pop();
@@ -73,7 +75,7 @@ public class DebugRendererClient implements ClientModInitializer {
 
     private void handleRenderLast(WorldRenderContext ctx) {
         if (ctx.advancedTranslucency()) return;
-        renderer.render();
+        renderer.render(ctx.matrixStack().peek().getPositionMatrix());
     }
 
     private void handleJoinGame(ClientPlayNetworkHandler handler, PacketSender sender, MinecraftClient client) {
@@ -88,24 +90,34 @@ public class DebugRendererClient implements ClientModInitializer {
 
     private void handlePacket(@NotNull MinecraftClient client, @NotNull ClientPlayNetworkHandler handler,
                               @NotNull PacketByteBuf buffer, @NotNull PacketSender sender) {
+        System.out.println("Received packet");
         var opCount = buffer.readVarInt();
+        System.out.println("Received " + opCount + " operations");
         for (int i = 0; i < opCount; i++) {
             int op = buffer.readVarInt();
+            System.out.println("Operation " + i + ": " + op);
             switch (op) {
                 case 0 -> { // SET
                     var shapeId = buffer.readIdentifier();
+                    System.out.println(" Shape id: " + shapeId);
                     var shapeType = buffer.readEnumConstant(Shape.Type.class);
-                    renderer.add(shapeId, shapeType.deserialize(buffer));
+                    System.out.println(" Shape type: " + shapeType);
+                    var deserialized = shapeType.deserialize(buffer);
+                    renderer.add(shapeId, deserialized);
+                    System.out.println(" Added shape: " + deserialized);
                 }
                 case 1 -> { // REMOVE
                     Identifier targetShape = buffer.readIdentifier();
+                    System.out.println(" Remove shape: " + targetShape);
                     renderer.remove(targetShape);
                 }
                 case 2 -> { // CLEAR_NS
                     String targetNamespace = buffer.readString(32767);
+                    System.out.println(" Clear namespace: " + targetNamespace);
                     renderer.remove(targetNamespace);
                 }
                 case 3 -> { // CLEAR
+                    System.out.println(" Clear all");
                     renderer.clear();
                 }
             }

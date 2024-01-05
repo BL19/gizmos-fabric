@@ -5,10 +5,12 @@ import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
 
 public class DebugRenderContext {
     private RenderType renderType = null;
     private BufferBuilder builder = null;
+    private Matrix4f matrix = null;
 
     private Vec3d cameraPos;
 
@@ -36,7 +38,7 @@ public class DebugRenderContext {
     }
 
     public void end() {
-        //todo probably can delete this, though i wouldnt mind min sanity check here
+        flush();
     }
 
     public void layer(@NotNull RenderLayer layer) {
@@ -62,9 +64,11 @@ public class DebugRenderContext {
         x -= cameraPos.x;
         y -= cameraPos.y;
         z -= cameraPos.z;
+        
+        float xf = (float) x, yf = (float) y, zf = (float) z;
 
         if (renderType == RenderType.QUADS) {
-            builder.vertex(x, y, z)
+            builder.vertex(matrix, xf, yf, zf)
                     .color(r, g, b, a)
                     .next();
         } else if (renderType == RenderType.LINES) {
@@ -77,13 +81,15 @@ public class DebugRenderContext {
             }
 
             var normal = computeNormal(lastX, lastY, lastZ, x, y, z);
-
-            builder.vertex(lastX, lastY, lastZ)
+            
+            float lastXf = (float) lastX, lastYf = (float) lastY, lastZf = (float) lastZ;
+            
+            builder.vertex(matrix, lastXf, lastYf, lastZf)
                     .color(r, g, b, a)
                     .normal((float) normal.x, (float) normal.y, (float) normal.z)
                     .next();
 
-            builder.vertex(x, y, z)
+            builder.vertex(matrix, xf, yf, zf)
                     .color(r, g, b, a)
                     .normal((float) normal.x, (float) normal.y, (float) normal.z)
                     .next();
@@ -97,11 +103,12 @@ public class DebugRenderContext {
 
     // Internal details
 
-    void init(@NotNull Vec3d cameraPos) {
+    void init(@NotNull Vec3d cameraPos, Matrix4f matrix) {
         this.cameraPos = cameraPos;
+        this.matrix = matrix;
     }
 
-    void flush() {
+    public void flush() {
         if (renderType == null) {
             return;
         }
